@@ -91,13 +91,13 @@ class JetBrainsKeyFetcher:
             {"type": "gitee", "name": "pengzhile/ide-eval-resetter", "path": "data/{date}.txt"},
             {"type": "gitee", "name": "superbeyone/J2_B5_A5_C4", "path": "licenses/2025/{date}.md"},
             {"type": "gitee", "name": "pengzhile/ide-eval-resetter", "path": "data/licenses_{date}.txt"},
-            {"type": "gitee", "name": "superbeyone/J2_B5_A5_C4", "path": "blob/master/licenses/2024/{date}.md"},
-            {"type": "gitee", "name": "pengzhile/ide-eval-resetter", "path": "blob/master/data/{date}.txt"},
+            {"type": "gitee", "name": "superbeyone/J2_B5_A5_C4", "path": "licenses/2024/{date}.md"},
+            {"type": "gitee", "name": "pengzhile/ide-eval-resetter", "path": "data/{date}.txt"},
             # GitHub repositories (will use API if token provided)
             {"type": "github", "name": "jetlicense/keys", "path": "keys/{date}.txt"},
             {"type": "github", "name": "idekeys/jetbrains", "path": "licenses/{date}.md"},
-            {"type": "github", "name": "labarmaley64/1ac-JetBrains-PyCharmc-ne", "path": "master/README.md"},
-            {"type": "github", "name": "0xbug/JLS", "path": "master/README.md"}
+            {"type": "github", "name": "labarmaley64/1ac-JetBrains-PyCharmc-ne", "path": "README.md"},
+            {"type": "github", "name": "0xbug/JLS", "path": "README.md"}
         ]
         
         # License server URLs to check
@@ -167,38 +167,67 @@ class JetBrainsKeyFetcher:
         return list(set(dates))  # Remove duplicates
 
     def construct_urls(self, date: str, source: Dict) -> List[str]:
-        """Construct multiple possible URLs for the given date and source."""
-        urls = []
+        """Construct and normalize possible URLs for the given date/source, avoiding malformed duplicates."""
+        urls: List[str] = []
         repo_type = source["type"]
         repo_name = source["name"]
         path_template = source["path"]
-        
+
         try:
+            # Render the template
             path = path_template.format(date=date)
-            
+
+            # Helper to ensure we don't double-prepend blob/raw when the template already has them
+            def gitee_url(sub_path: str) -> str:
+                return f"https://gitee.com/{repo_name}/{sub_path.lstrip('/')}"
+
+            def github_blob_url(sub_path: str) -> str:
+                return f"https://github.com/{repo_name}/{sub_path.lstrip('/')}"
+
             if repo_type == "gitee":
-                # Try different URL formats for Gitee
-                urls.extend([
-                    f"https://gitee.com/{repo_name}/blob/master/{path}",
-                    f"https://gitee.com/{repo_name}/raw/master/{path}",
-                    f"https://gitee.com/{repo_name}/{path}"
-                ])
-                
-                # Try with date components
-                if "-" in date:
+                # If the template already contains blob/ or raw/, use as-is and also try the alt form.
+                if path.startswith("blob/") or path.startswith("raw/"):
+                    urls.append(gitee_url(path))
+                    # Swap blob ↔ raw to try the alternative
+                    if path.startswith("blob/"):
+                        urls.append(gitee_url(path.replace("blob/", "raw/", 1)))
+                    else:
+                        urls.append(gitee_url(path.replace("raw/", "blob/", 1)))
+                else:
+                    # Standard patterns
+                    urls.extend([
+                        gitee_url(f"blob/master/{path}"),
+                        gitee_url(f"raw/master/{path}"),
+                        gitee_url(path),
+                    ])
+
+                # If date was YYYY-MM-DD, also attempt year/month/day components if placeholders exist
+                if "-" in date and any(t in path_template for t in ("{year}", "{month}", "{day}")):
                     year, month, day = date.split("-")
-                    path_with_components = path_template.format(
-                        date=date, year=year, month=month, day=day
-                    )
-                    urls.append(f"https://gitee.com/{repo_name}/blob/master/{path_with_components}")
+                    component_path = path_template.format(date=date, year=year, month=month, day=day)
+                    if component_path != path:
+                        urls.append(gitee_url(component_path))
+
             elif repo_type == "github":
-                # GitHub URLs
-                urls.append(f"https://github.com/{repo_name}/blob/main/{path}")
-                urls.append(f"https://raw.githubusercontent.com/{repo_name}/main/{path}")
+                # If path already starts with blob/ or raw/, respect it
+                if path.startswith("blob/") or path.startswith("raw/"):
+                    urls.append(github_blob_url(path))
+                    # Attempt raw.githubusercontent.com equivalent if possible
+                    if path.startswith("blob/"):
+                        strip_prefix = path.replace("blob/", "", 1)
+                        urls.append(f"https://raw.githubusercontent.com/{repo_name}/main/{strip_prefix}")
+                    elif path.startswith("raw/"):
+                        # Provide blob form
+                        urls.append(github_blob_url(path.replace("raw/", "blob/", 1)))
+                else:
+                    # Standard forms
+                    urls.append(github_blob_url(f"blob/main/{path}"))
+                    urls.append(f"https://raw.githubusercontent.com/{repo_name}/main/{path}")
         except Exception as e:
             logger.warning(f"Error constructing URLs for {repo_name} with date {date}: {e}")
-        
-        return list(set(urls))  # Remove duplicates
+
+        # Deduplicate
+        return list(dict.fromkeys(urls))
 
     def fetch_license_keys_web(self, url: str) -> List[str]:
         """Fetch and extract license keys from the given URL using web scraping."""
