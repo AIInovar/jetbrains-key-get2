@@ -1,12 +1,13 @@
-name: Deploy JetBrains License Server
-
-on:
-  workflow_dispatch:  # Allow manual triggers
-  push:
-    branches: [ main ]
-  schedule:
-    # Run every day at midnight UTC to keep the server alive
-    - cron: '0 0 * * *'
+# DISABLED WORKFLOW
+# name: Deploy JetBrains License Server
+# 
+# on:
+#   workflow_dispatch:  # Allow manual triggers
+#   # push:
+#   #   branches: [ main ]
+#   schedule:
+#     # Run every day at midnight UTC to keep the server alive
+#     - cron: '0 0 * * *'
 
 jobs:
   deploy:
