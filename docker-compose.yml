@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  fake-license-server:
+    build: .
+    container_name: jetbrains-license-server
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./jetbrains_licenses.txt:/app/licenses.txt
+    environment:
+      - PORT=8080
+      - LICENSE_FILE=licenses.txt
+    restart: unless-stopped

@@ -1,0 +1,13 @@
+JetBrains License Keys Report
+=============================
+
+Generated: 2025-07-02 11:49:35
+
+Licenses from Servers:
+- icense-device-finger | Source: Server https://license4j.com | Date: 2025-07-02
+- icense-server-manage | Source: Server https://license4j.com | Date: 2025-07-02
+- icense-server-settin | Source: Server https://license4j.com | Date: 2025-07-02
+- nse-device-finger | Source: Server https://license4j.com | Date: 2025-07-02
+- nse-server-manage | Source: Server https://license4j.com | Date: 2025-07-02
+- nse-server-settin | Source: Server https://license4j.com | Date: 2025-07-02
+
