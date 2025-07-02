@@ -134,6 +134,41 @@ class JetBrainsKeyFetcher:
             except Exception as e:
                 logger.error(f"Error loading cache: {e}")
 
+    def save_licenses(self) -> None:
+        """Save found licenses to the output file with proper file handling."""
+        if not self.all_licenses:
+            logger.warning("No new licenses found to save.")
+            return
+
+        try:
+            # Create directory if it doesn't exist
+            os.makedirs(os.path.dirname(os.path.abspath(self.output_file)), exist_ok=True)
+            
+            # Read existing licenses to avoid duplicates
+            existing_licenses = set()
+            if os.path.exists(self.output_file):
+                with open(self.output_file, 'r', encoding='utf-8') as f:
+                    existing_licenses = {line.strip() for line in f if line.strip()}
+            
+            # Add new licenses
+            all_licenses = existing_licenses.union(self.all_licenses)
+            
+            # Write all licenses back to file
+            with open(self.output_file, 'w', encoding='utf-8') as f:
+                for license_key in sorted(all_licenses):
+                    if license_key:  # Skip empty lines
+                        f.write(f"{license_key}\n")
+            
+            new_count = len(self.all_licenses - existing_licenses)
+            if new_count > 0:
+                logger.info(f"Added {new_count} new licenses to {self.output_file} (Total: {len(all_licenses)})")
+            else:
+                logger.info("No new licenses to add")
+                
+        except Exception as e:
+            logger.error(f"Error saving licenses: {e}", exc_info=True)
+            raise
+
     def save_cache(self) -> None:
         """Save found licenses to cache."""
         try:

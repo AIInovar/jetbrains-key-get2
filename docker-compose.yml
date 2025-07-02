@@ -1,14 +1,27 @@
 version: '3.8'
 
 services:
-  fake-license-server:
+  license-server:
     build: .
     container_name: jetbrains-license-server
     ports:
-      - "8080:8080"
+      - "5000:5000"
     volumes:
-      - ./jetbrains_licenses.txt:/app/licenses.txt
+      - license_data:/app/cache
+      - license_logs:/app/logs
+      - ./jetbrains_licenses.txt:/app/jetbrains_licenses.txt
     environment:
-      - PORT=8080
-      - LICENSE_FILE=licenses.txt
+      - PYTHONUNBUFFERED=1
+      - CACHE_DIR=/app/cache
+      - LOG_FILE=/app/logs/fetcher.log
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  license_data:
+  license_logs:

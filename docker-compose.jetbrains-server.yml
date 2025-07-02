@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  jetbrains-license-server:
+    image: crazymax/jetbrains-license-server:latest
+    container_name: jetbrains-license-server
+    environment:
+      - JLS_VENDOR_NAME=YourCompany
+      - JLS_ACCESS_CONFIG=/data/access-config.json
+      - JLS_SERVICE_LOG_LEVEL=INFO
+      - JLS_SERVICE_LOG_PATH=/data/logs/license-server.log
+      - JLS_CONTEXT=/jls
+    ports:
+      - "8111:8111"
+    volumes:
+      - ./jetbrains-license-data:/data
+      - ./jetbrains_licenses.txt:/data/license-server/license-keys/jetbrains_licenses.txt
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8111/jls/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

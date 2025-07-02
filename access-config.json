@@ -1,0 +1,17 @@
+{
+  "127.0.0.1": {
+    "comment": "Allow localhost",
+    "allowed": true,
+    "userName": "Local User",
+    "type": "HARDWARE"
+  },
+  "172.0.0.0/8": {
+    "comment": "Allow local network",
+    "allowed": true,
+    "type": "HARDWARE"
+  },
+  "0.0.0.0/0": {
+    "comment": "Default deny all other IPs",
+    "allowed": false
+  }
+}
